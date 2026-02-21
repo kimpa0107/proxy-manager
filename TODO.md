@@ -19,15 +19,9 @@
 
 #### 2. Automation Features
 
-- [ ] **Launch at Login** - Auto-start app on system login
-  - [ ] Add toggle in settings
-  - [ ] Create launch agent for macOS
 - [ ] **Network Change Detection** - Auto-apply proxy on network switch
   - [ ] Listen to network change events
   - [ ] Auto-apply last used profile
-- [ ] **Scheduled Tasks** - Schedule proxy on/off times
-  - [ ] Add schedule settings UI
-  - [ ] Implement background scheduler
 - [ ] **Rule-based Mode** - Auto-proxy based on domain rules
   - [ ] Create rule editor UI
   - [ ] Implement PAC file support
@@ -40,9 +34,6 @@
   - [ ] Create tray icon
   - [ ] Add tray menu (Toggle, Quit)
   - [ ] Hide window to tray on close
-- [ ] **Global Shortcut** - Keyboard shortcut to toggle proxy
-  - [ ] Add shortcut settings
-  - [ ] Register global shortcut handler
 - [ ] **System Notifications** - Native notifications for status changes
   - [ ] Use Notification Center API
   - [ ] Add notification preferences
