@@ -15,9 +15,9 @@ echo "Building ${APP_NAME} v${VERSION}..."
 rm -rf "${OUT_DIR}"
 mkdir -p "${OUT_DIR}"
 
-# 复制 Electron.app
+# 复制 Electron.app (使用 ditto 保持 APFS 压缩)
 echo "Copying Electron.app..."
-cp -r "${ELECTRON_APP}" "${OUT_DIR}/${APP_NAME}.app"
+ditto "${ELECTRON_APP}" "${OUT_DIR}/${APP_NAME}.app"
 
 # 复制应用文件
 echo "Copying application files..."

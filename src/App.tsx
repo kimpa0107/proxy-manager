@@ -255,7 +255,7 @@ const Checkbox: React.FC<{
   );
 };
 
-const StatusBadge: React.FC<{ status: 'on' | 'off' }> = ({ status }) => {
+const StatusBadge: React.FC<{ status?: 'on' | 'off' }> = () => {
   return null;
 };
 
