@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-800;
+  }
+  
+  html, body {
+    @apply bg-gray-950 text-gray-100;
+    overflow: hidden;
+  }
+  
+  body {
+    font-feature-settings: "cv11", "ss01";
+    font-optical-sizing: auto;
+  }
+}
+
+@layer utilities {
+  .cursor-wait {
+    cursor: wait;
+  }
+}
+
+/* 隐藏滚动条 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* 输入框自动填充样式 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #e5e7eb;
+  -webkit-box-shadow: 0 0 0px 1000px #1f2937 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
