@@ -390,6 +390,7 @@ ipcMain.handle('profiles:detectSystemProxy', async () => {
 // Network Change Detection
 function startNetworkMonitoring() {
   // Use scutil --watch to monitor network changes on macOS
+  // Note: --watch is only available on macOS 10.12+
   networkMonitorProcess = spawn('scutil', ['--watch'])
 
   networkMonitorProcess.stdout?.on('data', (data) => {
@@ -412,11 +413,17 @@ function startNetworkMonitoring() {
   })
 
   networkMonitorProcess.stderr?.on('data', (data) => {
-    console.error('Network monitor error:', data.toString())
+    const errorStr = data.toString()
+    // Only log actual errors, not the usage help text
+    if (!errorStr.includes('usage: scutil')) {
+      console.error('Network monitor error:', errorStr)
+    }
   })
 
   networkMonitorProcess.on('close', (code) => {
-    console.log(`Network monitor process exited with code ${code}`)
+    if (code !== 0 && code !== 64) {
+      console.log(`Network monitor process exited with code ${code}`)
+    }
     networkMonitorProcess = null
   })
 }

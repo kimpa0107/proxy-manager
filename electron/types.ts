@@ -1,3 +1,6 @@
+// Type definitions for Electron preload API
+// These types are also declared in src/vite-env.d.ts for global Window interface
+
 export interface Profile {
   id: string;
   name: string;
@@ -39,7 +42,7 @@ export interface ProxyAPI {
     port: string;
     httpEnabled: boolean;
     socksEnabled: boolean
-}>;
+  }>;
   onProxyStatusChange: (callback: (status: string) => void) => void;
   removeProxyStatusChangeListener: () => void;
 }
@@ -75,13 +78,5 @@ export interface RulesAPI {
   generatePAC: (rules: string[], proxyHost: string, proxyPort: string) => Promise<{ success: boolean; pacPath?: string; error?: string }>;
 }
 
-declare global {
-  interface Window {
-    proxyAPI: ProxyAPI;
-    profileAPI: ProfileManagerAPI;
-    automationAPI: AutomationAPI;
-    rulesAPI: RulesAPI;
-  }
-}
-
-export {};
+// Note: Global Window interface augmentation is in src/vite-env.d.ts
+// This file only exports types for use in other TypeScript files

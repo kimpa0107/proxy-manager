@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 const CONFIG_KEY = '_PA_PROXY_';
 
@@ -1035,46 +1035,6 @@ const SettingsModal: React.FC<{
   );
 };
 
-// Status Visualization Component
-const StatusVisualization: React.FC<{ status: 'on' | 'off'; loading: boolean }> = ({ status, loading }) => {
-  const isOn = status === 'on';
-
-  return (
-    <div className='relative w-full h-16 rounded-2xl bg-gradient-to-r from-gray-800/50 to-gray-800/30 border border-gray-700/50 overflow-hidden'>
-      {/* Animated background */}
-      <div className={`absolute inset-0 transition-opacity duration-500 ${isOn ? 'opacity-100' : 'opacity-0'}`}>
-        <div className='absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-emerald-500/10 animate-shimmer' />
-      </div>
-
-      {/* Status bars */}
-      <div className='absolute inset-0 flex items-center justify-center gap-1 p-4'>
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className={`w-1.5 rounded-full transition-all duration-300 ${
-              isOn
-                ? 'bg-gradient-to-t from-emerald-500 to-emerald-400'
-                : 'bg-gray-600'
-            }`}
-            style={{
-              height: isOn ? `${Math.random() * 100}%` : '20%',
-              transitionDelay: `${i * 30}ms`,
-              animation: isOn ? `bounce 0.6s ease-in-out infinite ${i * 50}ms` : 'none'
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Loading overlay */}
-      {loading && (
-        <div className='absolute inset-0 bg-gray-900/80 flex items-center justify-center'>
-          <div className='w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin' />
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default function App() {
   const [host, setHost] = useState('');
   const [port, setPort] = useState('');
@@ -1114,6 +1074,43 @@ export default function App() {
     if (!data) return null;
     return JSON.parse(data);
   };
+
+  const handleToggleProxy = useCallback(
+    async (toggleHost: string, togglePort: string, toggleHttpEnabled: boolean, toggleSocksEnabled: boolean) => {
+    if (!toggleHost || !togglePort) {
+      showMessage('error', 'Please enter host and port');
+      return;
+    }
+
+    if (!/^\d+$/.test(togglePort)) {
+      showMessage('error', 'Port must be a valid number');
+      return;
+    }
+
+    if (!toggleHttpEnabled && !toggleSocksEnabled) {
+      showMessage('error', 'Please enable at least one proxy type');
+      return;
+    }
+
+    setLoading(true);
+    const result = await window.proxyAPI.toggle(toggleHost, togglePort, proxyStatus, toggleHttpEnabled, toggleSocksEnabled);
+    setLoading(false);
+
+    if (result.success) {
+      const newStatus = proxyStatus === 'on' ? 'off' : 'on';
+      // Add to history
+      addToHistory({
+        profileName: activeProfile?.name || 'Custom',
+        host: toggleHost,
+        port: togglePort,
+        timestamp: Date.now(),
+        action: newStatus === 'on' ? 'enabled' : 'disabled'
+      });
+      showMessage('success', `Proxy ${newStatus === 'on' ? 'activated' : 'deactivated'}`);
+    } else {
+      showMessage('error', result.error || 'Failed to toggle proxy');
+    }
+  }, [proxyStatus, activeProfile]);
 
   useEffect(() => {
     // Load profiles
@@ -1181,7 +1178,7 @@ export default function App() {
       window.proxyAPI.removeProxyStatusChangeListener();
       window.automationAPI.removeNetworkChangeListener();
     };
-  }, [networkMonitoringEnabled, activeProfile, proxyStatus]);
+  }, [networkMonitoringEnabled, activeProfile, proxyStatus, handleToggleProxy]);
 
   const loadProfiles = async () => {
     try {
@@ -1339,42 +1336,6 @@ export default function App() {
       }
     } catch (error) {
       showMessage('error', 'Failed to update rule-based mode');
-    }
-  };
-
-  const handleToggleProxy = async (toggleHost: string, togglePort: string, toggleHttpEnabled: boolean, toggleSocksEnabled: boolean) => {
-    if (!toggleHost || !togglePort) {
-      showMessage('error', 'Please enter host and port');
-      return;
-    }
-
-    if (!/^\d+$/.test(togglePort)) {
-      showMessage('error', 'Port must be a valid number');
-      return;
-    }
-
-    if (!toggleHttpEnabled && !toggleSocksEnabled) {
-      showMessage('error', 'Please enable at least one proxy type');
-      return;
-    }
-
-    setLoading(true);
-    const result = await window.proxyAPI.toggle(toggleHost, togglePort, proxyStatus, toggleHttpEnabled, toggleSocksEnabled);
-    setLoading(false);
-
-    if (result.success) {
-      const newStatus = proxyStatus === 'on' ? 'off' : 'on';
-      // Add to history
-      addToHistory({
-        profileName: activeProfile?.name || 'Custom',
-        host: toggleHost,
-        port: togglePort,
-        timestamp: Date.now(),
-        action: newStatus === 'on' ? 'enabled' : 'disabled'
-      });
-      showMessage('success', `Proxy ${newStatus === 'on' ? 'activated' : 'deactivated'}`);
-    } else {
-      showMessage('error', result.error || 'Failed to toggle proxy');
     }
   };
 
@@ -1674,9 +1635,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Status Visualization */}
-            <StatusVisualization status={proxyStatus} loading={loading || initializing} />
-
             {/* 表单区域 */}
             <div className='space-y-2.5'>
               <ProfileSelector
@@ -1751,17 +1709,48 @@ export default function App() {
                 Save
               </Button>
 
-              {/* Toggle 按钮 */}
-              <Button
-                onClick={onToggle}
-                variant={proxyStatus === 'on' ? 'danger' : 'success'}
-                disabled={loading || (proxyStatus === 'off' && !canTurnOn)}
-                loading={loading}
-                fullWidth
-              >
-                {proxyStatus === 'on' ? <Icons.PowerOff /> : <Icons.PowerOn />}
-                {loading ? 'Switching...' : (proxyStatus === 'on' ? 'Turn Off' : 'Turn On')}
-              </Button>
+              {/* Toggle 按钮 - 大圆形 */}
+              <div className='flex justify-center pt-2'>
+                <button
+                  onClick={onToggle}
+                  disabled={loading || (proxyStatus === 'off' && !canTurnOn)}
+                  className={`
+                    relative w-24 h-24 rounded-full flex items-center justify-center
+                    transition-all duration-300 transform active:scale-95
+                    disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+                    ${proxyStatus === 'on' 
+                      ? 'bg-gradient-to-br from-rose-500 to-red-500 shadow-lg shadow-rose-500/40 hover:shadow-rose-500/60' 
+                      : 'bg-gradient-to-br from-emerald-500 to-green-500 shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/60'
+                    }
+                  `}
+                >
+                  {loading ? (
+                    <svg className="animate-spin w-10 h-10 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    <>
+                      {proxyStatus === 'on' ? (
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                      ) : (
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      )}
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {/* 状态文字 */}
+              <div className='text-center'>
+                <p className={`text-xs font-medium ${proxyStatus === 'on' ? 'text-emerald-400' : 'text-gray-500'}`}>
+                  {loading ? 'Switching...' : (proxyStatus === 'on' ? 'Proxy Active' : 'Proxy Inactive')}
+                </p>
+              </div>
             </div>
           </div>
 
