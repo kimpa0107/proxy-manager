@@ -9,6 +9,19 @@ export interface Profile {
   updatedAt: number;
 }
 
+export interface ExportData {
+  version: string;
+  exportedAt: number;
+  profiles: Profile[];
+}
+
+export interface SystemProxyConfig {
+  host: string;
+  port: string;
+  httpEnabled: boolean;
+  socksEnabled: boolean;
+}
+
 export interface ProxyAPI {
   toggle: (host: string, port: string, currentState: string, httpEnabled: boolean, socksEnabled: boolean) => Promise<{ success: boolean; error?: string }>;
   getStatus: () => Promise<string>;
@@ -29,6 +42,9 @@ export interface ProfileManagerAPI {
   deleteProfile: (id: string) => Promise<boolean>;
   setActiveProfile: (id: string) => Promise<void>;
   getActiveProfile: () => Promise<Profile | null>;
+  exportProfiles: () => Promise<ExportData>;
+  importProfiles: (data: ExportData) => Promise<number>;
+  detectSystemProxy: () => Promise<SystemProxyConfig | null>;
 }
 
 declare global {

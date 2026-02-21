@@ -12,10 +12,10 @@
   - [x] Implement profile CRUD operations
   - [x] Store profiles in config file
 - [x] **Quick Switch** - One-click switch between saved profiles
-- [ ] **Import/Export** - Backup and share configurations
-  - [ ] Export profiles to JSON file
-  - [ ] Import profiles from JSON file
-- [ ] **Auto-Detect** - Detect and import current system proxy settings
+- [x] **Import/Export** - Backup and share configurations
+  - [x] Export profiles to JSON file
+  - [x] Import profiles from JSON file
+- [x] **Auto-Detect** - Detect and import current system proxy settings
 
 #### 2. Automation Features
 
@@ -137,4 +137,4 @@
 ---
 
 **Last Updated:** 2026-02-21
-**Version:** 0.2.0
+**Version:** 0.3.0

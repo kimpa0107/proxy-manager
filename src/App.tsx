@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const CONFIG_KEY = '_PA_PROXY_';
 
@@ -142,6 +142,21 @@ const Icons = {
   Chart: () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  ),
+  Download: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+  ),
+  Upload: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+    </svg>
+  ),
+  Scan: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
     </svg>
   ),
 };
@@ -321,8 +336,11 @@ const ProfileSelector: React.FC<{
   onNewProfile: () => void;
   onEditProfile: (profile: Profile) => void;
   onDeleteProfile: (profile: Profile) => void;
+  onExport: () => void;
+  onImport: () => void;
+  onDetectSystem: () => void;
   disabled?: boolean;
-}> = ({ profiles, activeProfile, onSelectProfile, onNewProfile, onEditProfile, onDeleteProfile, disabled }) => {
+}> = ({ profiles, activeProfile, onSelectProfile, onNewProfile, onEditProfile, onDeleteProfile, onExport, onImport, onDetectSystem, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -417,7 +435,7 @@ const ProfileSelector: React.FC<{
                   </div>
                 ))
               )}
-              <div className='border-t border-gray-700 mt-1 pt-1'>
+              <div className='border-t border-gray-700 mt-1 pt-1 space-y-1'>
                 <button
                   onClick={() => {
                     onNewProfile();
@@ -427,6 +445,36 @@ const ProfileSelector: React.FC<{
                 >
                   <Icons.Plus />
                   New Profile
+                </button>
+                <button
+                  onClick={() => {
+                    onDetectSystem();
+                    setIsOpen(false);
+                  }}
+                  className='w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-amber-400 hover:bg-amber-500/10 transition-colors'
+                >
+                  <Icons.Scan />
+                  Detect System Proxy
+                </button>
+                <button
+                  onClick={() => {
+                    onImport();
+                    setIsOpen(false);
+                  }}
+                  className='w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors'
+                >
+                  <Icons.Upload />
+                  Import Profiles
+                </button>
+                <button
+                  onClick={() => {
+                    onExport();
+                    setIsOpen(false);
+                  }}
+                  className='w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-blue-400 hover:bg-blue-500/10 transition-colors'
+                >
+                  <Icons.Download />
+                  Export Profiles
                 </button>
               </div>
             </div>
@@ -765,6 +813,9 @@ export default function App() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
+  // Ref for file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const getConfig = (): IConfig | null => {
     const data = localStorage.getItem(CONFIG_KEY);
     if (!data) return null;
@@ -1014,6 +1065,87 @@ export default function App() {
     }
   };
 
+  // Export/Import and System Proxy Detection handlers
+  const handleExport = async () => {
+    try {
+      await window.profileAPI.exportProfiles();
+      showMessage('success', 'Profiles exported successfully');
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message !== 'Export cancelled') {
+        showMessage('error', 'Failed to export profiles');
+      }
+    }
+  };
+
+  const handleImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!data.version || !data.profiles) {
+        showMessage('error', 'Invalid profile file format');
+        return;
+      }
+
+      const count = await window.profileAPI.importProfiles(data);
+      await loadProfiles();
+      showMessage('success', `Imported ${count} profile(s)`);
+    } catch (error) {
+      console.error('Import error:', error);
+      showMessage('error', 'Failed to import profiles');
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDetectSystem = async () => {
+    try {
+      const systemProxy = await window.profileAPI.detectSystemProxy();
+
+      if (systemProxy) {
+        // Check if a profile with this config already exists
+        const existingProfile = profiles.find(
+          p => p.host === systemProxy.host && p.port === systemProxy.port
+        );
+
+        if (existingProfile) {
+          // Select existing profile
+          handleSelectProfile(existingProfile);
+          showMessage('success', `Found existing profile: ${existingProfile.name}`);
+        } else {
+          // Create new profile from system proxy
+          const newProfile = {
+            name: 'System Proxy',
+            host: systemProxy.host,
+            port: systemProxy.port,
+            httpEnabled: systemProxy.httpEnabled,
+            socksEnabled: systemProxy.socksEnabled
+          };
+
+          const savedProfile = await window.profileAPI.saveProfile(newProfile);
+          await loadProfiles();
+          handleSelectProfile(savedProfile);
+          showMessage('success', 'System proxy detected and saved');
+        }
+      } else {
+        showMessage('error', 'No system proxy detected');
+      }
+    } catch (error) {
+      console.error('Detection error:', error);
+      showMessage('error', 'Failed to detect system proxy');
+    }
+  };
+
   const hasChanges = host !== savedHost || port !== savedPort;
   const canTurnOn = host && port && /^\d+$/.test(port) && (httpEnabled || socksEnabled);
 
@@ -1091,7 +1223,19 @@ export default function App() {
                 onNewProfile={handleNewProfile}
                 onEditProfile={handleEditProfile}
                 onDeleteProfile={handleDeleteProfile}
+                onExport={handleExport}
+                onImport={handleImport}
+                onDetectSystem={handleDetectSystem}
                 disabled={loading}
+              />
+
+              {/* Hidden file input for import */}
+              <input
+                ref={fileInputRef}
+                type='file'
+                accept='.json'
+                onChange={handleFileImport}
+                className='hidden'
               />
 
               <FormItem

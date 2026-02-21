@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
@@ -258,9 +258,129 @@ ipcMain.handle('profiles:getActive', async () => {
   if (!activeId) {
     return null
   }
-  
+
   const profiles = getProfiles()
   return profiles.find(p => p.id === activeId) || null
+})
+
+// Export/Import and System Proxy Detection Handlers
+ipcMain.handle('profiles:export', async () => {
+  const profiles = getProfiles()
+
+  const exportData = {
+    version: app.getVersion(),
+    exportedAt: Date.now(),
+    profiles: profiles.map(p => ({
+      ...p,
+      // Remove internal IDs and timestamps for cleaner export
+      id: `imported_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    }))
+  }
+
+  // Show save dialog
+  const result = await dialog.showSaveDialog({
+    title: 'Export Profiles',
+    defaultPath: 'proxy-profiles.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }]
+  })
+
+  if (result.filePath) {
+    try {
+      await fs.promises.writeFile(result.filePath, JSON.stringify(exportData, null, 2))
+      return exportData
+    } catch (error) {
+      console.error('Failed to export profiles:', error)
+      throw new Error('Failed to export profiles')
+    }
+  }
+
+  throw new Error('Export cancelled')
+})
+
+ipcMain.handle('profiles:import', async (_, data) => {
+  if (!data || !data.profiles || !Array.isArray(data.profiles)) {
+    throw new Error('Invalid import data')
+  }
+
+  const profiles = getProfiles()
+  let importedCount = 0
+
+  for (const profileData of data.profiles) {
+    // Check if profile with same name exists
+    const existingIndex = profiles.findIndex(p => p.name === profileData.name)
+
+    const now = Date.now()
+    const profile = {
+      id: `imported_${now}_${Math.random().toString(36).substr(2, 9)}`,
+      name: profileData.name,
+      host: profileData.host,
+      port: profileData.port,
+      httpEnabled: profileData.httpEnabled,
+      socksEnabled: profileData.socksEnabled,
+      createdAt: now,
+      updatedAt: now
+    }
+
+    if (existingIndex >= 0) {
+      // Update existing profile
+      profiles[existingIndex] = profile
+    } else {
+      // Add new profile
+      profiles.push(profile)
+    }
+
+    importedCount++
+  }
+
+  saveProfiles(profiles)
+  return importedCount
+})
+
+ipcMain.handle('profiles:detectSystemProxy', async () => {
+  try {
+    // Use scutil to get current system proxy settings on macOS
+    const { stdout } = await execFileAsync('bash', ['-c', `
+      # Get HTTP proxy
+      HTTP_PROXY=$(/usr/sbin/scutil --proxy | grep -E "^  HTTPProxy" | awk '{print $3}')
+      HTTP_PORT=$(/usr/sbin/scutil --proxy | grep -E "^  HTTPPort" | awk '{print $3}')
+
+      # Get SOCKS proxy
+      SOCKS_PROXY=$(/usr/sbin/scutil --proxy | grep -E "^  SOCKSProxy" | awk '{print $3}')
+      SOCKS_PORT=$(/usr/sbin/scutil --proxy | grep -E "^  SOCKSPort" | awk '{print $3}')
+
+      # Output as JSON
+      echo "{
+        \\"httpHost\\": \\"$HTTP_PROXY\\",
+        \\"httpPort\\": \\"$HTTP_PORT\\",
+        \\"socksHost\\": \\"$SOCKS_PROXY\\",
+        \\"socksPort\\": \\"$SOCKS_PORT\\"
+      }"
+    `])
+
+    const config = JSON.parse(stdout)
+
+    // Return the detected proxy configuration
+    if (config.httpHost && config.httpPort) {
+      return {
+        host: config.httpHost,
+        port: config.httpPort.toString(),
+        httpEnabled: true,
+        socksEnabled: !!(config.socksHost && config.socksPort)
+      }
+    } else if (config.socksHost && config.socksPort) {
+      return {
+        host: config.socksHost,
+        port: config.socksPort.toString(),
+        httpEnabled: false,
+        socksEnabled: true
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Failed to detect system proxy:', error)
+    return null
+  }
 })
 
 app.on('window-all-closed', () => {

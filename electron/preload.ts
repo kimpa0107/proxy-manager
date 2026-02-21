@@ -118,4 +118,8 @@ contextBridge.exposeInMainWorld('profileAPI', {
   deleteProfile: (id: string) => ipcRenderer.invoke('profiles:delete', id),
   setActiveProfile: (id: string) => ipcRenderer.invoke('profiles:setActive', id),
   getActiveProfile: () => ipcRenderer.invoke('profiles:getActive'),
+  exportProfiles: () => ipcRenderer.invoke('profiles:export'),
+  importProfiles: (data: { version: string; exportedAt: number; profiles: any[] }) =>
+    ipcRenderer.invoke('profiles:import', data),
+  detectSystemProxy: () => ipcRenderer.invoke('profiles:detectSystemProxy'),
 })
