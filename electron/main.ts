@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage, Notification } from 'electron'
 import path from 'node:path'
 import { execFile, spawn } from 'node:child_process'
@@ -124,15 +122,11 @@ function createWindow() {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
   })
 
-  // Hide to tray on close (commented out - now closes directly)
-  // win.on('close', (event) => {
-  //   if (win && !isQuitting) {
-  //     event.preventDefault()
-  //     win.hide()
-  //     app.dock.hide()
-  //     return false
-  //   }
-  // })
+  // Hide dock icon on close
+  win.on('closed', () => {
+    win = null
+    app.dock.hide()
+  })
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
@@ -667,13 +661,11 @@ function sendNotification(title: string, body: string) {
   }
 }
 
-// Quit event - set flag to allow window to close
-app.on('before-quit', () => {
-})
-
+// Quit event
 app.on('window-all-closed', () => {
   stopNetworkMonitoring()
   win = null
+  app.quit()
 })
 
 app.whenReady().then(() => {
