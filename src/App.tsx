@@ -429,7 +429,7 @@ export default function App() {
                 value={port}
                 onChange={onInputChange}
                 onSubmit={onSave}
-                placeholder='1080'
+                placeholder='1082'
                 disabled={loading}
               />
               
