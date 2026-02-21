@@ -1,7 +1,12 @@
 export interface ProxyAPI {
   toggle: (host: string, port: string, currentState: string, httpEnabled: boolean, socksEnabled: boolean) => Promise<{ success: boolean; error?: string }>;
   getStatus: () => Promise<string>;
-  getConfig: () => Promise<{ httpEnabled: boolean; socksEnabled: boolean }>;
+  getConfig: () => Promise<{
+    host: any;
+    port: any; 
+    httpEnabled: boolean; 
+    socksEnabled: boolean 
+}>;
   onProxyStatusChange: (callback: (status: string) => void) => void;
   removeProxyStatusChangeListener: () => void;
 }

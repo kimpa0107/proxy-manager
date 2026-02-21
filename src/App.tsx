@@ -297,10 +297,18 @@ export default function App() {
     ]).then(([status, proxyConfig]) => {
       console.log({ status, proxyConfig });
       setProxyStatus(status as 'on' | 'off');
-      // 如果代理已开启，使用系统状态；否则保持默认勾选
+      
+      // 如果代理已开启，总是使用系统实际配置（覆盖 localStorage）
       if (status === 'on') {
         setHttpEnabled(proxyConfig.httpEnabled);
         setSocksEnabled(proxyConfig.socksEnabled);
+        // 如果系统有实际的 host 和 port，显示到界面上
+        if (proxyConfig.host && proxyConfig.port) {
+          setHost(proxyConfig.host);
+          setPort(proxyConfig.port);
+          setSavedHost(proxyConfig.host);
+          setSavedPort(proxyConfig.port);
+        }
       }
     });
 
