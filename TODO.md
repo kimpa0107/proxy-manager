@@ -83,10 +83,24 @@
 
 #### 6. UI Improvements
 
-- [ ] **Enhanced Animations** - Smoother toggle animations
-- [ ] **Status Visualization** - Graphical proxy status display
-- [ ] **History View** - Show recently used configurations
-- [ ] **Responsive Design** - Better window sizing support
+- [x] **Enhanced Animations** - Smoother toggle animations
+  - [x] Button hover/active animations
+  - [x] Modal slide-in animations
+  - [x] Status bar bounce animations
+  - [x] Shimmer effects for active state
+- [x] **Status Visualization** - Graphical proxy status display
+  - [x] Animated status bars
+  - [x] Color-coded states (green=on, gray=off)
+  - [x] Loading state overlay
+- [x] **History View** - Show recently used configurations
+  - [x] Track proxy enable/disable actions
+  - [x] Track profile switches
+  - [x] Display relative timestamps
+  - [x] Clear history option
+- [x] **Responsive Design** - Better window sizing support
+  - [x] Resizable window
+  - [x] Min/max size constraints
+  - [x] Flexible layout
 
 ---
 
@@ -123,4 +137,4 @@
 ---
 
 **Last Updated:** 2026-02-21
-**Version:** 0.1.0
+**Version:** 0.2.0

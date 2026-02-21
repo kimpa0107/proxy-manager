@@ -18,6 +18,15 @@ interface Profile {
   updatedAt: number;
 }
 
+interface HistoryItem {
+  id: string;
+  profileName: string;
+  host: string;
+  port: string;
+  timestamp: number;
+  action: 'enabled' | 'disabled' | 'switched';
+}
+
 interface FormItemProps {
   name: string;
   label: string;
@@ -123,6 +132,16 @@ const Icons = {
   Close: () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+  History: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  Chart: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
   ),
 };
@@ -257,10 +276,6 @@ const Checkbox: React.FC<{
       <span className='text-xs text-gray-300'>{label}</span>
     </label>
   );
-};
-
-const StatusBadge: React.FC<{ status?: 'on' | 'off' }> = () => {
-  return null;
 };
 
 const Message: React.FC<{ type: 'success' | 'error'; text: string; onClose: () => void }> = ({ type, text, onClose }) => {
@@ -590,6 +605,143 @@ const DeleteConfirmModal: React.FC<{
   );
 };
 
+// History Panel Component
+const HistoryPanel: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  history: HistoryItem[];
+  onClear: () => void;
+}> = ({ isOpen, onClose, history, onClear }) => {
+  if (!isOpen) return null;
+
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
+
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case 'enabled': return 'text-emerald-400 bg-emerald-500/10';
+      case 'disabled': return 'text-rose-400 bg-rose-500/10';
+      case 'switched': return 'text-violet-400 bg-violet-500/10';
+      default: return 'text-gray-400 bg-gray-500/10';
+    }
+  };
+
+  return (
+    <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+      <div className='absolute inset-0 bg-black/60 backdrop-blur-sm' onClick={onClose} />
+      <div className='relative w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-5 animate-slideIn max-h-[70vh] overflow-hidden flex flex-col'>
+        <div className='flex items-center justify-between mb-4'>
+          <div className='flex items-center gap-2'>
+            <span className='text-violet-400'>
+              <Icons.History />
+            </span>
+            <h3 className='text-sm font-semibold text-white'>History</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className='p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors'
+          >
+            <Icons.Close />
+          </button>
+        </div>
+
+        <div className='flex-1 overflow-y-auto space-y-2 min-h-0'>
+          {history.length === 0 ? (
+            <div className='text-center py-8 text-gray-500 text-xs'>
+              No history yet
+            </div>
+          ) : (
+            history.map(item => (
+              <div
+                key={item.id}
+                className='flex items-center gap-3 p-3 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-gray-600 transition-colors'
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getActionColor(item.action)}`}>
+                  {item.action === 'enabled' && <Icons.PowerOn />}
+                  {item.action === 'disabled' && <Icons.PowerOff />}
+                  {item.action === 'switched' && <Icons.Check />}
+                </div>
+                <div className='flex-1 min-w-0'>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-xs font-medium text-gray-200 truncate'>
+                      {item.profileName}
+                    </span>
+                    <span className='text-[10px] text-gray-500'>
+                      {item.host}:{item.port}
+                    </span>
+                  </div>
+                  <span className='text-[10px] text-gray-500'>
+                    {formatTime(item.timestamp)}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {history.length > 0 && (
+          <div className='mt-4 pt-4 border-t border-gray-800'>
+            <Button variant='ghost' onClick={onClear} fullWidth>
+              Clear History
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Status Visualization Component
+const StatusVisualization: React.FC<{ status: 'on' | 'off'; loading: boolean }> = ({ status, loading }) => {
+  const isOn = status === 'on';
+
+  return (
+    <div className='relative w-full h-16 rounded-2xl bg-gradient-to-r from-gray-800/50 to-gray-800/30 border border-gray-700/50 overflow-hidden'>
+      {/* Animated background */}
+      <div className={`absolute inset-0 transition-opacity duration-500 ${isOn ? 'opacity-100' : 'opacity-0'}`}>
+        <div className='absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-emerald-500/10 animate-shimmer' />
+      </div>
+
+      {/* Status bars */}
+      <div className='absolute inset-0 flex items-center justify-center gap-1 p-4'>
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className={`w-1.5 rounded-full transition-all duration-300 ${
+              isOn
+                ? 'bg-gradient-to-t from-emerald-500 to-emerald-400'
+                : 'bg-gray-600'
+            }`}
+            style={{
+              height: isOn ? `${Math.random() * 100}%` : '20%',
+              transitionDelay: `${i * 30}ms`,
+              animation: isOn ? `bounce 0.6s ease-in-out infinite ${i * 50}ms` : 'none'
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Loading overlay */}
+      {loading && (
+        <div className='absolute inset-0 bg-gray-900/80 flex items-center justify-center'>
+          <div className='w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin' />
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function App() {
   const [host, setHost] = useState('');
   const [port, setPort] = useState('');
@@ -609,6 +761,10 @@ export default function App() {
   const [deletingProfile, setDeletingProfile] = useState<Profile | null>(null);
   const [initializing, setInitializing] = useState(true);
 
+  // History states
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
   const getConfig = (): IConfig | null => {
     const data = localStorage.getItem(CONFIG_KEY);
     if (!data) return null;
@@ -618,6 +774,7 @@ export default function App() {
   useEffect(() => {
     // Load profiles
     loadProfiles();
+    loadHistory();
 
     const config = getConfig();
     if (config) {
@@ -678,6 +835,47 @@ export default function App() {
     }
   };
 
+  const HISTORY_KEY = '_PA_PROXY_HISTORY_';
+
+  const loadHistory = () => {
+    try {
+      const data = localStorage.getItem(HISTORY_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        setHistory(parsed.slice(0, 10)); // Keep last 10 items
+      }
+    } catch (error) {
+      console.error('Failed to load history:', error);
+    }
+  };
+
+  const addToHistory = (item: Omit<HistoryItem, 'id'>) => {
+    try {
+      const data = localStorage.getItem(HISTORY_KEY);
+      const currentHistory = data ? JSON.parse(data) : [];
+      const newItem = {
+        ...item,
+        id: `history_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      };
+      const updatedHistory = [newItem, ...currentHistory].slice(0, 20); // Keep last 20 items
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
+      setHistory(updatedHistory.slice(0, 10));
+    } catch (error) {
+      console.error('Failed to add to history:', error);
+    }
+  };
+
+  const clearHistory = () => {
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+      setHistory([]);
+      setShowHistory(false);
+      showMessage('success', 'History cleared successfully');
+    } catch (error) {
+      showMessage('error', 'Failed to clear history');
+    }
+  };
+
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 4000);
@@ -724,6 +922,14 @@ export default function App() {
 
     if (result.success) {
       const newStatus = proxyStatus === 'on' ? 'off' : 'on';
+      // Add to history
+      addToHistory({
+        profileName: activeProfile?.name || 'Custom',
+        host,
+        port,
+        timestamp: Date.now(),
+        action: newStatus === 'on' ? 'enabled' : 'disabled'
+      });
       showMessage('success', `Proxy ${newStatus === 'on' ? 'activated' : 'deactivated'}`);
     } else {
       showMessage('error', result.error || 'Failed to toggle proxy');
@@ -737,6 +943,15 @@ export default function App() {
     setPort(profile.port);
     setHttpEnabled(profile.httpEnabled);
     setSocksEnabled(profile.socksEnabled);
+
+    // Add to history
+    addToHistory({
+      profileName: profile.name,
+      host: profile.host,
+      port: profile.port,
+      timestamp: Date.now(),
+      action: 'switched'
+    });
 
     try {
       await window.profileAPI.setActiveProfile(profile.id);
@@ -835,6 +1050,14 @@ export default function App() {
         profileName={deletingProfile?.name || ''}
       />
 
+      {/* History Panel */}
+      <HistoryPanel
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        history={history}
+        onClear={clearHistory}
+      />
+
       <div className='relative w-full max-w-md'>
         {/* 主卡片 */}
         <div className='relative backdrop-blur-xl bg-gray-900/80 rounded-3xl border border-gray-800/50 shadow-2xl shadow-black/50 overflow-hidden'>
@@ -843,16 +1066,21 @@ export default function App() {
 
           <div className='p-5 space-y-4'>
             {/* 标题区域 */}
-            <div className='text-center space-y-1.5'>
+            <div className='flex items-center justify-between'>
               <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border transition-all duration-300 ${initializing ? 'border-amber-500/50 text-amber-400' : proxyStatus === 'on' ? 'border-emerald-500/50 text-emerald-400' : 'border-violet-500/30 text-violet-400'}`}>
                 <Icons.Proxy status={proxyStatus} loading={initializing} />
               </div>
+              <button
+                onClick={() => setShowHistory(true)}
+                className='p-2 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-violet-500/50 text-gray-400 hover:text-violet-400 transition-all'
+                title='View History'
+              >
+                <Icons.History />
+              </button>
             </div>
 
-            {/* 状态指示器 */}
-            <div className='flex justify-center'>
-              <StatusBadge status={proxyStatus} />
-            </div>
+            {/* Status Visualization */}
+            <StatusVisualization status={proxyStatus} loading={loading || initializing} />
 
             {/* 表单区域 */}
             <div className='space-y-2.5'>
@@ -959,6 +1187,29 @@ export default function App() {
         }
         .animate-slideIn {
           animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -1000px 0;
+          }
+          100% {
+            background-position: 1000px 0;
+          }
+        }
+        .animate-shimmer {
+          animation: shimmer 2s linear infinite;
+          background: linear-gradient(to right, transparent 0%, rgba(16, 185, 129, 0.1) 50%, transparent 100%);
+          background-size: 1000px 100%;
+        }
+
+        @keyframes bounce {
+          0%, 100% {
+            transform: scaleY(0.3);
+          }
+          50% {
+            transform: scaleY(1);
+          }
         }
       `}</style>
     </div>

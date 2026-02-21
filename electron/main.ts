@@ -78,9 +78,13 @@ const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 400,
-    height: 540,
-    resizable: false,
+    width: 450,
+    height: 650,
+    minWidth: 400,
+    minHeight: 550,
+    maxWidth: 700,
+    maxHeight: 800,
+    resizable: true,
     maximizable: false,
     minimizable: true,
     alwaysOnTop: true,
