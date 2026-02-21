@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState, useRef, useCallback } from 'react';
 
 const CONFIG_KEY = '_PA_PROXY_';
@@ -335,36 +336,45 @@ const Checkbox: React.FC<{
   onChange: (checked: boolean) => void;
   disabled?: boolean;
 }> = ({ label, checked, onChange, disabled = false }) => {
+  const handleClick = () => {
+    if (disabled) return;
+    // 使用函数式更新，确保获取最新的值
+    onChange(!checked);
+  };
+
   return (
-    <label className={`
-      flex items-center gap-2 cursor-pointer transition-opacity
-      ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-    `}>
-      <div className='relative'>
-        <input
-          type='checkbox'
-          className='sr-only'
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          disabled={disabled}
-        />
-        <div className={`
-          w-4 h-4 rounded border-2 transition-all duration-200
-          flex items-center justify-center
-          ${checked
-            ? 'bg-violet-600 border-violet-600'
-            : 'bg-gray-800 border-gray-600 hover:border-gray-500'
-          }
-        `}>
-          {checked && (
-            <svg className='w-3 h-3 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' />
-            </svg>
-          )}
-        </div>
+    <div 
+      className={`
+        flex items-center gap-2 transition-opacity select-none
+        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+      `}
+      onClick={handleClick}
+      role='checkbox'
+      aria-checked={checked}
+      tabIndex={disabled ? -1 : 0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+    >
+      <div className={`
+        w-4 h-4 rounded border-2 transition-all duration-200 flex-shrink-0
+        flex items-center justify-center
+        ${checked
+          ? 'bg-violet-600 border-violet-600'
+          : 'bg-gray-800 border-gray-600'
+        }
+      `}>
+        {checked && (
+          <svg className='w-3 h-3 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' />
+          </svg>
+        )}
       </div>
       <span className='text-xs text-gray-300'>{label}</span>
-    </label>
+    </div>
   );
 };
 
@@ -1169,6 +1179,7 @@ export default function App() {
     }
   }, [proxyStatus, activeProfile]);
 
+  // Effect for initial load (runs once on mount)
   useEffect(() => {
     // Load theme
     const savedTheme = localStorage.getItem('proxy_manager_theme') as 'dark' | 'light' | 'system' | null;
@@ -1204,7 +1215,6 @@ export default function App() {
       window.proxyAPI.getStatus(),
       window.proxyAPI.getConfig()
     ]).then(([status, proxyConfig]) => {
-      console.log({ status, proxyConfig });
       setProxyStatus(status as 'on' | 'off');
 
       // 如果代理已开启，总是使用系统实际配置（覆盖 localStorage）
@@ -1237,9 +1247,15 @@ export default function App() {
     };
     mediaQuery.addEventListener('change', handleSystemThemeChange);
 
-    // Listen for network changes
+    return () => {
+      mediaQuery.removeEventListener('change', handleSystemThemeChange);
+      window.proxyAPI.removeProxyStatusChangeListener();
+    };
+  }, []);
+
+  // Effect for network changes (depends on networkMonitoringEnabled, activeProfile, proxyStatus, handleToggleProxy)
+  useEffect(() => {
     window.automationAPI.onNetworkChange((data) => {
-      console.log('Network change detected:', data);
       // Auto-apply the profile on network change
       if (networkMonitoringEnabled && activeProfile?.id === data.profileId) {
         // Apply the profile automatically
@@ -1257,11 +1273,9 @@ export default function App() {
     });
 
     return () => {
-      mediaQuery.removeEventListener('change', handleSystemThemeChange);
-      window.proxyAPI.removeProxyStatusChangeListener();
       window.automationAPI.removeNetworkChangeListener();
     };
-  }, [networkMonitoringEnabled, activeProfile, proxyStatus, handleToggleProxy, theme]);
+  }, [handleToggleProxy, networkMonitoringEnabled, activeProfile?.id, proxyStatus]);
 
   const loadProfiles = async () => {
     try {
@@ -1784,13 +1798,11 @@ export default function App() {
                   label='HTTP/HTTPS'
                   checked={httpEnabled}
                   onChange={setHttpEnabled}
-                  disabled={loading}
                 />
                 <Checkbox
                   label='SOCKS'
                   checked={socksEnabled}
                   onChange={setSocksEnabled}
-                  disabled={loading}
                 />
               </div>
             </div>
