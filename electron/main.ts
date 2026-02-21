@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'node:path'
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { promisify } from 'node:util'
 import fs from 'node:fs'
 
 const execFileAsync = promisify(execFile)
+
+// Network change detection
+let networkMonitorProcess: ReturnType<typeof spawn> | null = null
+let lastActiveProfileId: string | null = null
 
 // The built directory structure
 //
@@ -383,8 +387,178 @@ ipcMain.handle('profiles:detectSystemProxy', async () => {
   }
 })
 
+// Network Change Detection
+function startNetworkMonitoring() {
+  // Use scutil --watch to monitor network changes on macOS
+  networkMonitorProcess = spawn('scutil', ['--watch'])
+
+  networkMonitorProcess.stdout?.on('data', (data) => {
+    console.log('Network change detected:', data.toString())
+    // Auto-apply last active profile on network change
+    if (lastActiveProfileId && win) {
+      const profiles = getProfiles()
+      const profile = profiles.find(p => p.id === lastActiveProfileId)
+      if (profile) {
+        win.webContents.send('network:change', {
+          profileId: profile.id,
+          profileName: profile.name,
+          host: profile.host,
+          port: profile.port,
+          httpEnabled: profile.httpEnabled,
+          socksEnabled: profile.socksEnabled
+        })
+      }
+    }
+  })
+
+  networkMonitorProcess.stderr?.on('data', (data) => {
+    console.error('Network monitor error:', data.toString())
+  })
+
+  networkMonitorProcess.on('close', (code) => {
+    console.log(`Network monitor process exited with code ${code}`)
+    networkMonitorProcess = null
+  })
+}
+
+function stopNetworkMonitoring() {
+  if (networkMonitorProcess) {
+    networkMonitorProcess.kill()
+    networkMonitorProcess = null
+  }
+}
+
+ipcMain.handle('automation:startNetworkMonitoring', async () => {
+  startNetworkMonitoring()
+  return { success: true }
+})
+
+ipcMain.handle('automation:stopNetworkMonitoring', async () => {
+  stopNetworkMonitoring()
+  return { success: true }
+})
+
+ipcMain.handle('automation:setLastActiveProfile', async (_, profileId: string | null) => {
+  lastActiveProfileId = profileId
+  return { success: true }
+})
+
+ipcMain.handle('automation:getLastActiveProfile', async () => {
+  return { profileId: lastActiveProfileId }
+})
+
+// Launch at Login
+ipcMain.handle('automation:launchAtLogin', async (_, enable: boolean) => {
+  try {
+    app.setLoginItemSettings({
+      openAtLogin: enable,
+      openAsHidden: true,
+      args: ['--hidden']
+    })
+    return { success: true, enabled: enable }
+  } catch (error) {
+    console.error('Failed to set launch at login:', error)
+    return { success: false, error: 'Failed to set launch at login' }
+  }
+})
+
+ipcMain.handle('automation:getLaunchAtLogin', async () => {
+  try {
+    const settings = app.getLoginItemSettings()
+    return { enabled: settings.openAtLogin }
+  } catch (error) {
+    console.error('Failed to get launch at login:', error)
+    return { enabled: false }
+  }
+})
+
+// Rule-based mode (PAC file support)
+const RULES_KEY = 'proxy_rules'
+const RULE_BASED_MODE_KEY = 'proxy_rule_based_mode_enabled'
+
+function getRulesStore(): string[] {
+  const store = getProfilesStore()
+  return store[RULES_KEY] || []
+}
+
+function saveRulesStore(rules: string[]): void {
+  const store = getProfilesStore()
+  store[RULES_KEY] = rules
+  saveProfilesStore(store)
+}
+
+function getRuleBasedModeEnabled(): boolean {
+  const store = getProfilesStore()
+  return store[RULE_BASED_MODE_KEY] === true
+}
+
+function setRuleBasedModeEnabled(enabled: boolean): void {
+  const store = getProfilesStore()
+  store[RULE_BASED_MODE_KEY] = enabled
+  saveProfilesStore(store)
+}
+
+ipcMain.handle('rules:getAll', async () => {
+  return getRulesStore()
+})
+
+ipcMain.handle('rules:save', async (_, rules: string[]) => {
+  saveRulesStore(rules)
+  return { success: true }
+})
+
+ipcMain.handle('rules:setEnabled', async (_, enabled: boolean) => {
+  setRuleBasedModeEnabled(enabled)
+  return { success: true }
+})
+
+ipcMain.handle('rules:getEnabled', async () => {
+  return getRuleBasedModeEnabled()
+})
+
+// Generate PAC file
+ipcMain.handle('rules:generatePAC', async (_, rules: string[], proxyHost: string, proxyPort: string) => {
+  try {
+    // Convert rules to PAC format
+    const pacRules = rules.map((rule: string) => {
+      const trimmedRule = rule.trim()
+      if (trimmedRule.startsWith('*.')) {
+        // Domain suffix rule
+        const domain = trimmedRule.substring(2)
+        return `  if (dnsDomainIs(host, ".${domain}")) return "PROXY ${proxyHost}:${proxyPort}";`
+      } else if (trimmedRule.includes('*')) {
+        // Wildcard rule - convert to simple pattern
+        return `  if (shExpMatch(host, "${trimmedRule}")) return "PROXY ${proxyHost}:${proxyPort}";`
+      } else {
+        // Exact domain match
+        return `  if (host === "${trimmedRule}") return "PROXY ${proxyHost}:${proxyPort}";`
+      }
+    }).join('\n')
+
+    const pacContent = `function FindProxyForURL(url, host) {
+${pacRules}
+  return "DIRECT";
+}`
+
+    // Save PAC file to user data directory
+    const userDataPath = app.getPath('userData')
+    const pacPath = path.join(userDataPath, 'proxy.pac')
+    await fs.promises.writeFile(pacPath, pacContent)
+
+    return { success: true, pacPath }
+  } catch (error) {
+    console.error('Failed to generate PAC file:', error)
+    return { success: false, error: 'Failed to generate PAC file' }
+  }
+})
+
 app.on('window-all-closed', () => {
+  stopNetworkMonitoring()
   win = null
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  createWindow()
+  // Start network monitoring by default
+  startNetworkMonitoring()
+})

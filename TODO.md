@@ -19,12 +19,15 @@
 
 #### 2. Automation Features
 
-- [ ] **Network Change Detection** - Auto-apply proxy on network switch
-  - [ ] Listen to network change events
-  - [ ] Auto-apply last used profile
-- [ ] **Rule-based Mode** - Auto-proxy based on domain rules
-  - [ ] Create rule editor UI
-  - [ ] Implement PAC file support
+- [x] **Network Change Detection** - Auto-apply proxy on network switch
+  - [x] Listen to network change events
+  - [x] Auto-apply last used profile
+- [x] **Rule-based Mode** - Auto-proxy based on domain rules
+  - [x] Create rule editor UI
+  - [x] Implement PAC file support
+- [x] **Launch at Login** - Start automatically on system boot
+  - [x] Add launch at login toggle
+  - [x] Configure hidden launch option
 
 ### 🟡 Medium Priority
 
@@ -107,8 +110,8 @@
 
 ### Phase 2: Automation (v0.2.0)
 
-- [ ] Launch at login
-- [ ] Network change detection
+- [x] Launch at login
+- [x] Network change detection
 - [ ] Global shortcut
 
 ### Phase 3: Advanced (v0.3.0)

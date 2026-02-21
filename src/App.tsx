@@ -159,6 +159,76 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
     </svg>
   ),
+  Rules: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  ),
+  Settings: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+  Auto: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  ),
+  Launch: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+  ),
+};
+
+// Tooltip Component
+const Tooltip: React.FC<{
+  text: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom';
+}> = ({ text, children, position = 'top' }) => {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div
+      className='relative inline-flex'
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+    >
+      {children}
+      {visible && (
+        <>
+          {/* Tooltip with arrow as one unit */}
+          <div
+            className={`absolute z-50 left-1/2 -translate-x-1/2 flex flex-col items-center ${
+              position === 'top' 
+                ? 'bottom-full mb-2' 
+                : 'top-full mt-2'
+            }`}
+          >
+            {position === 'top' ? (
+              // Arrow below tooltip (tooltip above button)
+              <>
+                <div className="px-2 py-1 text-[10px] font-medium text-white bg-gray-900 border border-gray-700 rounded-lg whitespace-nowrap shadow-lg">
+                  {text}
+                </div>
+                <div className="w-2 h-2 bg-gray-900 border-r border-b border-gray-700 rotate-45 -mt-1" />
+              </>
+            ) : (
+              // Arrow above tooltip (tooltip below button)
+              <>
+                <div className="w-2 h-2 bg-gray-900 border-l border-t border-gray-700 rotate-45 -mb-1" />
+                <div className="px-2 py-1 text-[10px] font-medium text-white bg-gray-900 border border-gray-700 rounded-lg whitespace-nowrap shadow-lg">
+                  {text}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
 const Button: React.FC<ButtonProps> = props => {
@@ -750,6 +820,221 @@ const HistoryPanel: React.FC<{
   );
 };
 
+// Rule Editor Modal Component
+const RuleEditorModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  rules: string[];
+  onSave: (rules: string[]) => void;
+  proxyHost: string;
+  proxyPort: string;
+}> = ({ isOpen, onClose, rules, onSave, proxyHost, proxyPort }) => {
+  const [ruleText, setRuleText] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setRuleText(rules.join('\n'));
+    }
+  }, [isOpen, rules]);
+
+  const handleSave = () => {
+    const newRules = ruleText.split('\n').map(r => r.trim()).filter(r => r.length > 0);
+    onSave(newRules);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+      <div className='absolute inset-0 bg-black/60 backdrop-blur-sm' onClick={onClose} />
+      <div className='relative w-full max-w-lg bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-5 animate-slideIn max-h-[80vh] overflow-hidden flex flex-col'>
+        <div className='flex items-center justify-between mb-4'>
+          <div className='flex items-center gap-2'>
+            <span className='text-violet-400'>
+              <Icons.Rules />
+            </span>
+            <h3 className='text-sm font-semibold text-white'>Rule-Based Mode</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className='p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors'
+          >
+            <Icons.Close />
+          </button>
+        </div>
+
+        <div className='mb-3 p-3 bg-violet-500/10 border border-violet-500/20 rounded-xl'>
+          <p className='text-xs text-violet-300'>
+            <strong>Rule Format (one per line):</strong>
+          </p>
+          <ul className='text-[10px] text-violet-400 mt-1 space-y-0.5'>
+            <li>• <code className='bg-violet-500/20 px-1 rounded'>*.example.com</code> - Match domain and subdomains</li>
+            <li>• <code className='bg-violet-500/20 px-1 rounded'>example.com</code> - Exact domain match</li>
+            <li>• <code className='bg-violet-500/20 px-1 rounded'>*://*.example.com/*</code> - Wildcard URL pattern</li>
+          </ul>
+        </div>
+
+        <div className='flex-1 min-h-0 flex flex-col'>
+          <label className='block text-[10px] font-medium text-gray-400 mb-1 uppercase tracking-wider'>
+            Proxy Rules
+          </label>
+          <textarea
+            value={ruleText}
+            onChange={(e) => setRuleText(e.target.value)}
+            placeholder='*.google.com&#10;*.facebook.com&#10;*.twitter.com&#10;example.com'
+            className='flex-1 w-full min-h-[200px] px-3.5 py-2.5 rounded-xl bg-gray-800/50 border border-gray-700/50 text-gray-100 text-xs font-mono placeholder-gray-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors resize-none'
+          />
+        </div>
+
+        {proxyHost && proxyPort && (
+          <div className='mt-3 p-2 bg-gray-800/50 rounded-lg'>
+            <p className='text-[10px] text-gray-400'>
+              PAC file will use proxy: <span className='text-violet-400 font-mono'>{proxyHost}:{proxyPort}</span>
+            </p>
+          </div>
+        )}
+
+        <div className='flex gap-2 mt-4'>
+          <Button variant='ghost' onClick={onClose} fullWidth>
+            Cancel
+          </Button>
+          <Button variant='primary' onClick={handleSave} fullWidth>
+            Save Rules
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Settings Modal Component
+const SettingsModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  launchAtLogin: boolean;
+  onToggleLaunchAtLogin: (enabled: boolean) => void;
+  networkMonitoringEnabled: boolean;
+  onToggleNetworkMonitoring: (enabled: boolean) => void;
+  ruleBasedModeEnabled: boolean;
+  onToggleRuleBasedMode: (enabled: boolean) => void;
+}> = ({ 
+  isOpen, 
+  onClose, 
+  launchAtLogin, 
+  onToggleLaunchAtLogin,
+  networkMonitoringEnabled,
+  onToggleNetworkMonitoring,
+  ruleBasedModeEnabled,
+  onToggleRuleBasedMode
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+      <div className='absolute inset-0 bg-black/60 backdrop-blur-sm' onClick={onClose} />
+      <div className='relative w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-5 animate-slideIn'>
+        <div className='flex items-center justify-between mb-4'>
+          <div className='flex items-center gap-2'>
+            <span className='text-violet-400'>
+              <Icons.Settings />
+            </span>
+            <h3 className='text-sm font-semibold text-white'>Settings</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className='p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors'
+          >
+            <Icons.Close />
+          </button>
+        </div>
+
+        <div className='space-y-3'>
+          {/* Launch at Login */}
+          <div className='flex items-center justify-between p-3 rounded-xl bg-gray-800/50 border border-gray-700/50'>
+            <div className='flex items-center gap-2'>
+              <span className='text-amber-400'>
+                <Icons.Launch />
+              </span>
+              <div>
+                <p className='text-xs font-medium text-gray-200'>Launch at Login</p>
+                <p className='text-[10px] text-gray-500'>Start automatically on system boot</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onToggleLaunchAtLogin(!launchAtLogin)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${
+                launchAtLogin ? 'bg-violet-600' : 'bg-gray-700'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                  launchAtLogin ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Network Change Detection */}
+          <div className='flex items-center justify-between p-3 rounded-xl bg-gray-800/50 border border-gray-700/50'>
+            <div className='flex items-center gap-2'>
+              <span className='text-emerald-400'>
+                <Icons.Auto />
+              </span>
+              <div>
+                <p className='text-xs font-medium text-gray-200'>Network Auto-Switch</p>
+                <p className='text-[10px] text-gray-500'>Auto-apply proxy on network change</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onToggleNetworkMonitoring(!networkMonitoringEnabled)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${
+                networkMonitoringEnabled ? 'bg-violet-600' : 'bg-gray-700'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                  networkMonitoringEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Rule-Based Mode */}
+          <div className='flex items-center justify-between p-3 rounded-xl bg-gray-800/50 border border-gray-700/50'>
+            <div className='flex items-center gap-2'>
+              <span className='text-blue-400'>
+                <Icons.Rules />
+              </span>
+              <div>
+                <p className='text-xs font-medium text-gray-200'>Rule-Based Mode</p>
+                <p className='text-[10px] text-gray-500'>Auto-proxy based on domain rules</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onToggleRuleBasedMode(!ruleBasedModeEnabled)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${
+                ruleBasedModeEnabled ? 'bg-violet-600' : 'bg-gray-700'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                  ruleBasedModeEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className='mt-5 p-3 bg-gray-800/30 rounded-xl'>
+          <p className='text-[10px] text-gray-500 text-center'>
+            Automation features help you manage proxy settings automatically
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Status Visualization Component
 const StatusVisualization: React.FC<{ status: 'on' | 'off'; loading: boolean }> = ({ status, loading }) => {
   const isOn = status === 'on';
@@ -813,6 +1098,14 @@ export default function App() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
+  // Automation states
+  const [showSettings, setShowSettings] = useState(false);
+  const [launchAtLogin, setLaunchAtLogin] = useState(false);
+  const [networkMonitoringEnabled, setNetworkMonitoringEnabled] = useState(true);
+  const [ruleBasedModeEnabled, setRuleBasedModeEnabled] = useState(false);
+  const [showRuleEditor, setShowRuleEditor] = useState(false);
+  const [rules, setRules] = useState<string[]>([]);
+
   // Ref for file input
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -826,6 +1119,8 @@ export default function App() {
     // Load profiles
     loadProfiles();
     loadHistory();
+    loadAutomationSettings();
+    loadRules();
 
     const config = getConfig();
     if (config) {
@@ -863,10 +1158,30 @@ export default function App() {
       setProxyStatus(status as 'on' | 'off');
     });
 
+    // Listen for network changes
+    window.automationAPI.onNetworkChange((data) => {
+      console.log('Network change detected:', data);
+      // Auto-apply the profile on network change
+      if (networkMonitoringEnabled && activeProfile?.id === data.profileId) {
+        // Apply the profile automatically
+        setHost(data.host);
+        setPort(data.port);
+        setHttpEnabled(data.httpEnabled);
+        setSocksEnabled(data.socksEnabled);
+        
+        // Turn on proxy if it's off
+        if (proxyStatus === 'off' && data.host && data.port) {
+          handleToggleProxy(data.host, data.port, data.httpEnabled, data.socksEnabled);
+          showMessage('success', `Auto-applied ${data.profileName} on network change`);
+        }
+      }
+    });
+
     return () => {
       window.proxyAPI.removeProxyStatusChangeListener();
+      window.automationAPI.removeNetworkChangeListener();
     };
-  }, []);
+  }, [networkMonitoringEnabled, activeProfile, proxyStatus]);
 
   const loadProfiles = async () => {
     try {
@@ -927,6 +1242,142 @@ export default function App() {
     }
   };
 
+  // Automation settings functions
+  const loadAutomationSettings = async () => {
+    try {
+      const [launchSettings, lastActiveProfile] = await Promise.all([
+        window.automationAPI.getLaunchAtLogin(),
+        window.automationAPI.getLastActiveProfile()
+      ]);
+      setLaunchAtLogin(launchSettings.enabled);
+      
+      // Store last active profile ID for network change detection
+      if (lastActiveProfile.profileId) {
+        window.automationAPI.setLastActiveProfile(lastActiveProfile.profileId);
+      }
+    } catch (error) {
+      console.error('Failed to load automation settings:', error);
+    }
+  };
+
+  const handleToggleLaunchAtLogin = async (enabled: boolean) => {
+    try {
+      const result = await window.automationAPI.setLaunchAtLogin(enabled);
+      if (result.success) {
+        setLaunchAtLogin(enabled);
+        showMessage('success', enabled ? 'Will launch at login' : 'Launch at login disabled');
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to update launch at login');
+    }
+  };
+
+  const handleToggleNetworkMonitoring = async (enabled: boolean) => {
+    try {
+      if (enabled) {
+        await window.automationAPI.startNetworkMonitoring();
+      } else {
+        await window.automationAPI.stopNetworkMonitoring();
+      }
+      setNetworkMonitoringEnabled(enabled);
+      showMessage('success', enabled ? 'Network monitoring enabled' : 'Network monitoring disabled');
+    } catch (error) {
+      showMessage('error', 'Failed to update network monitoring');
+    }
+  };
+
+  const loadRules = async () => {
+    try {
+      const [rules, enabled] = await Promise.all([
+        window.rulesAPI.getAll(),
+        window.rulesAPI.getEnabled()
+      ]);
+      setRules(rules);
+      setRuleBasedModeEnabled(enabled);
+    } catch (error) {
+      console.error('Failed to load rules:', error);
+    }
+  };
+
+  const handleSaveRules = async (newRules: string[]) => {
+    try {
+      await window.rulesAPI.save(newRules);
+      setRules(newRules);
+      
+      // Generate PAC file if rule-based mode is enabled
+      if (ruleBasedModeEnabled && host && port) {
+        const result = await window.rulesAPI.generatePAC(newRules, host, port);
+        if (result.success) {
+          showMessage('success', 'Rules saved and PAC file generated');
+        } else {
+          showMessage('error', 'Failed to generate PAC file');
+        }
+      } else {
+        showMessage('success', 'Rules saved');
+      }
+      setShowRuleEditor(false);
+    } catch (error) {
+      showMessage('error', 'Failed to save rules');
+    }
+  };
+
+  const handleToggleRuleBasedMode = async (enabled: boolean) => {
+    try {
+      await window.rulesAPI.setEnabled(enabled);
+      setRuleBasedModeEnabled(enabled);
+      
+      // Generate PAC file when enabling
+      if (enabled && rules.length > 0 && host && port) {
+        const result = await window.rulesAPI.generatePAC(rules, host, port);
+        if (result.success) {
+          showMessage('success', 'Rule-based mode enabled');
+        } else {
+          showMessage('error', 'Failed to enable rule-based mode');
+        }
+      } else {
+        showMessage('success', enabled ? 'Rule-based mode enabled' : 'Rule-based mode disabled');
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to update rule-based mode');
+    }
+  };
+
+  const handleToggleProxy = async (toggleHost: string, togglePort: string, toggleHttpEnabled: boolean, toggleSocksEnabled: boolean) => {
+    if (!toggleHost || !togglePort) {
+      showMessage('error', 'Please enter host and port');
+      return;
+    }
+
+    if (!/^\d+$/.test(togglePort)) {
+      showMessage('error', 'Port must be a valid number');
+      return;
+    }
+
+    if (!toggleHttpEnabled && !toggleSocksEnabled) {
+      showMessage('error', 'Please enable at least one proxy type');
+      return;
+    }
+
+    setLoading(true);
+    const result = await window.proxyAPI.toggle(toggleHost, togglePort, proxyStatus, toggleHttpEnabled, toggleSocksEnabled);
+    setLoading(false);
+
+    if (result.success) {
+      const newStatus = proxyStatus === 'on' ? 'off' : 'on';
+      // Add to history
+      addToHistory({
+        profileName: activeProfile?.name || 'Custom',
+        host: toggleHost,
+        port: togglePort,
+        timestamp: Date.now(),
+        action: newStatus === 'on' ? 'enabled' : 'disabled'
+      });
+      showMessage('success', `Proxy ${newStatus === 'on' ? 'activated' : 'deactivated'}`);
+    } else {
+      showMessage('error', result.error || 'Failed to toggle proxy');
+    }
+  };
+
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 4000);
@@ -952,39 +1403,7 @@ export default function App() {
   };
 
   const onToggle = async () => {
-    if (!host || !port) {
-      showMessage('error', 'Please enter host and port');
-      return;
-    }
-
-    if (!/^\d+$/.test(port)) {
-      showMessage('error', 'Port must be a valid number');
-      return;
-    }
-
-    if (!httpEnabled && !socksEnabled) {
-      showMessage('error', 'Please enable at least one proxy type');
-      return;
-    }
-
-    setLoading(true);
-    const result = await window.proxyAPI.toggle(host, port, proxyStatus, httpEnabled, socksEnabled);
-    setLoading(false);
-
-    if (result.success) {
-      const newStatus = proxyStatus === 'on' ? 'off' : 'on';
-      // Add to history
-      addToHistory({
-        profileName: activeProfile?.name || 'Custom',
-        host,
-        port,
-        timestamp: Date.now(),
-        action: newStatus === 'on' ? 'enabled' : 'disabled'
-      });
-      showMessage('success', `Proxy ${newStatus === 'on' ? 'activated' : 'deactivated'}`);
-    } else {
-      showMessage('error', result.error || 'Failed to toggle proxy');
-    }
+    await handleToggleProxy(host, port, httpEnabled, socksEnabled);
   };
 
   // Profile handlers
@@ -994,6 +1413,9 @@ export default function App() {
     setPort(profile.port);
     setHttpEnabled(profile.httpEnabled);
     setSocksEnabled(profile.socksEnabled);
+
+    // Update last active profile for network monitoring
+    await window.automationAPI.setLastActiveProfile(profile.id);
 
     // Add to history
     addToHistory({
@@ -1190,6 +1612,28 @@ export default function App() {
         onClear={clearHistory}
       />
 
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        launchAtLogin={launchAtLogin}
+        onToggleLaunchAtLogin={handleToggleLaunchAtLogin}
+        networkMonitoringEnabled={networkMonitoringEnabled}
+        onToggleNetworkMonitoring={handleToggleNetworkMonitoring}
+        ruleBasedModeEnabled={ruleBasedModeEnabled}
+        onToggleRuleBasedMode={handleToggleRuleBasedMode}
+      />
+
+      {/* Rule Editor Modal */}
+      <RuleEditorModal
+        isOpen={showRuleEditor}
+        onClose={() => setShowRuleEditor(false)}
+        rules={rules}
+        onSave={handleSaveRules}
+        proxyHost={host}
+        proxyPort={port}
+      />
+
       <div className='relative w-full max-w-md'>
         {/* 主卡片 */}
         <div className='relative backdrop-blur-xl bg-gray-900/80 rounded-3xl border border-gray-800/50 shadow-2xl shadow-black/50 overflow-hidden'>
@@ -1202,13 +1646,32 @@ export default function App() {
               <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border transition-all duration-300 ${initializing ? 'border-amber-500/50 text-amber-400' : proxyStatus === 'on' ? 'border-emerald-500/50 text-emerald-400' : 'border-violet-500/30 text-violet-400'}`}>
                 <Icons.Proxy status={proxyStatus} loading={initializing} />
               </div>
-              <button
-                onClick={() => setShowHistory(true)}
-                className='p-2 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-violet-500/50 text-gray-400 hover:text-violet-400 transition-all'
-                title='View History'
-              >
-                <Icons.History />
-              </button>
+              <div className='flex items-center gap-2'>
+                <Tooltip text='Rule-Based Mode' position='bottom'>
+                  <button
+                    onClick={() => setShowRuleEditor(true)}
+                    className='p-2 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-blue-500/50 text-gray-400 hover:text-blue-400 transition-all'
+                  >
+                    <Icons.Rules />
+                  </button>
+                </Tooltip>
+                <Tooltip text='Settings' position='bottom'>
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className='p-2 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-violet-500/50 text-gray-400 hover:text-violet-400 transition-all'
+                  >
+                    <Icons.Settings />
+                  </button>
+                </Tooltip>
+                <Tooltip text='History' position='bottom'>
+                  <button
+                    onClick={() => setShowHistory(true)}
+                    className='p-2 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-violet-500/50 text-gray-400 hover:text-violet-400 transition-all'
+                  >
+                    <Icons.History />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
 
             {/* Status Visualization */}

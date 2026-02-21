@@ -22,6 +22,15 @@ export interface SystemProxyConfig {
   socksEnabled: boolean;
 }
 
+export interface NetworkChangeData {
+  profileId: string;
+  profileName: string;
+  host: string;
+  port: string;
+  httpEnabled: boolean;
+  socksEnabled: boolean;
+}
+
 export interface ProxyAPI {
   toggle: (host: string, port: string, currentState: string, httpEnabled: boolean, socksEnabled: boolean) => Promise<{ success: boolean; error?: string }>;
   getStatus: () => Promise<string>;
@@ -47,10 +56,31 @@ export interface ProfileManagerAPI {
   detectSystemProxy: () => Promise<SystemProxyConfig | null>;
 }
 
+export interface AutomationAPI {
+  startNetworkMonitoring: () => Promise<{ success: boolean }>;
+  stopNetworkMonitoring: () => Promise<{ success: boolean }>;
+  setLastActiveProfile: (profileId: string | null) => Promise<{ success: boolean }>;
+  getLastActiveProfile: () => Promise<{ profileId: string | null }>;
+  setLaunchAtLogin: (enable: boolean) => Promise<{ success: boolean; enabled: boolean }>;
+  getLaunchAtLogin: () => Promise<{ enabled: boolean }>;
+  onNetworkChange: (callback: (data: NetworkChangeData) => void) => void;
+  removeNetworkChangeListener: () => void;
+}
+
+export interface RulesAPI {
+  getAll: () => Promise<string[]>;
+  save: (rules: string[]) => Promise<{ success: boolean }>;
+  setEnabled: (enabled: boolean) => Promise<{ success: boolean }>;
+  getEnabled: () => Promise<boolean>;
+  generatePAC: (rules: string[], proxyHost: string, proxyPort: string) => Promise<{ success: boolean; pacPath?: string; error?: string }>;
+}
+
 declare global {
   interface Window {
     proxyAPI: ProxyAPI;
     profileAPI: ProfileManagerAPI;
+    automationAPI: AutomationAPI;
+    rulesAPI: RulesAPI;
   }
 }
 

@@ -123,3 +123,29 @@ contextBridge.exposeInMainWorld('profileAPI', {
     ipcRenderer.invoke('profiles:import', data),
   detectSystemProxy: () => ipcRenderer.invoke('profiles:detectSystemProxy'),
 })
+
+// Automation APIs
+contextBridge.exposeInMainWorld('automationAPI', {
+  startNetworkMonitoring: () => ipcRenderer.invoke('automation:startNetworkMonitoring'),
+  stopNetworkMonitoring: () => ipcRenderer.invoke('automation:stopNetworkMonitoring'),
+  setLastActiveProfile: (profileId: string | null) => ipcRenderer.invoke('automation:setLastActiveProfile', profileId),
+  getLastActiveProfile: () => ipcRenderer.invoke('automation:getLastActiveProfile'),
+  setLaunchAtLogin: (enable: boolean) => ipcRenderer.invoke('automation:launchAtLogin', enable),
+  getLaunchAtLogin: () => ipcRenderer.invoke('automation:getLaunchAtLogin'),
+  onNetworkChange: (callback: (data: { profileId: string; profileName: string; host: string; port: string; httpEnabled: boolean; socksEnabled: boolean }) => void) => {
+    ipcRenderer.on('network:change', (_, data) => callback(data))
+  },
+  removeNetworkChangeListener: () => {
+    ipcRenderer.removeAllListeners('network:change')
+  },
+})
+
+// Rule-based mode APIs
+contextBridge.exposeInMainWorld('rulesAPI', {
+  getAll: () => ipcRenderer.invoke('rules:getAll'),
+  save: (rules: string[]) => ipcRenderer.invoke('rules:save', rules),
+  setEnabled: (enabled: boolean) => ipcRenderer.invoke('rules:setEnabled', enabled),
+  getEnabled: () => ipcRenderer.invoke('rules:getEnabled'),
+  generatePAC: (rules: string[], proxyHost: string, proxyPort: string) =>
+    ipcRenderer.invoke('rules:generatePAC', rules, proxyHost, proxyPort),
+})
