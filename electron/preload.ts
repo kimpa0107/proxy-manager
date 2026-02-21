@@ -96,7 +96,7 @@ setTimeout(removeLoading, 4999)
 // Expose protected methods that allow the renderer process to call
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('proxyAPI', {
-  toggle: (host: string, port: string, currentState: string, httpEnabled: boolean, socksEnabled: boolean) => 
+  toggle: (host: string, port: string, currentState: string, httpEnabled: boolean, socksEnabled: boolean) =>
     ipcRenderer.invoke('proxy:toggle', host, port, currentState, httpEnabled, socksEnabled),
   getStatus: () => ipcRenderer.invoke('proxy:getStatus'),
   getConfig: () => ipcRenderer.invoke('proxy:getConfig'),
@@ -106,4 +106,16 @@ contextBridge.exposeInMainWorld('proxyAPI', {
   removeProxyStatusChangeListener: () => {
     ipcRenderer.removeAllListeners('proxy:statusChange')
   },
+})
+
+// Profile management APIs
+contextBridge.exposeInMainWorld('profileAPI', {
+  getProfiles: () => ipcRenderer.invoke('profiles:getAll'),
+  saveProfile: (profile: { name: string; host: string; port: string; httpEnabled: boolean; socksEnabled: boolean }) =>
+    ipcRenderer.invoke('profiles:save', profile),
+  updateProfile: (id: string, profile: { name?: string; host?: string; port?: string; httpEnabled?: boolean; socksEnabled?: boolean }) =>
+    ipcRenderer.invoke('profiles:update', id, profile),
+  deleteProfile: (id: string) => ipcRenderer.invoke('profiles:delete', id),
+  setActiveProfile: (id: string) => ipcRenderer.invoke('profiles:setActive', id),
+  getActiveProfile: () => ipcRenderer.invoke('profiles:getActive'),
 })

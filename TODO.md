@@ -5,18 +5,20 @@
 ### 🔴 High Priority
 
 #### 1. Proxy Configuration Management
-- [ ] **Multiple Profiles** - Save multiple proxy configurations (Home, Work, Public)
-  - [ ] Create profile management UI
-  - [ ] Add profile switcher dropdown
-  - [ ] Implement profile CRUD operations
-  - [ ] Store profiles in localStorage or config file
-- [ ] **Quick Switch** - One-click switch between saved profiles
+
+- [x] **Multiple Profiles** - Save multiple proxy configurations (Home, Work, Public)
+  - [x] Create profile management UI
+  - [x] Add profile switcher dropdown
+  - [x] Implement profile CRUD operations
+  - [x] Store profiles in config file
+- [x] **Quick Switch** - One-click switch between saved profiles
 - [ ] **Import/Export** - Backup and share configurations
   - [ ] Export profiles to JSON file
   - [ ] Import profiles from JSON file
 - [ ] **Auto-Detect** - Detect and import current system proxy settings
 
 #### 2. Automation Features
+
 - [ ] **Launch at Login** - Auto-start app on system login
   - [ ] Add toggle in settings
   - [ ] Create launch agent for macOS
@@ -33,6 +35,7 @@
 ### 🟡 Medium Priority
 
 #### 3. User Experience
+
 - [ ] **System Tray** - Minimize to tray for quick access
   - [ ] Create tray icon
   - [ ] Add tray menu (Toggle, Quit)
@@ -49,6 +52,7 @@
   - [ ] Detect system theme preference
 
 #### 4. Advanced Features
+
 - [ ] **Proxy Speed Test** - Test proxy connection latency
   - [ ] Implement ping/test request
   - [ ] Display latency results
@@ -64,6 +68,7 @@
   - [ ] Create log viewer UI
 
 #### 5. Security
+
 - [ ] **Keychain Integration** - Store admin password in system keychain
   - [ ] Use node-keytar or similar
   - [ ] Add keychain management
@@ -77,6 +82,7 @@
 ### 🟢 Low Priority
 
 #### 6. UI Improvements
+
 - [ ] **Enhanced Animations** - Smoother toggle animations
 - [ ] **Status Visualization** - Graphical proxy status display
 - [ ] **History View** - Show recently used configurations
@@ -87,18 +93,21 @@
 ## 🎯 Current Sprint
 
 ### Phase 1: Core Features (v0.1.0)
+
 - [x] Basic proxy toggle (HTTP/HTTPS & SOCKS)
 - [x] Proxy status display
 - [x] Configuration save/load
-- [ ] Multiple profiles
+- [x] Multiple profiles
 - [ ] System tray integration
 
 ### Phase 2: Automation (v0.2.0)
+
 - [ ] Launch at login
 - [ ] Network change detection
 - [ ] Global shortcut
 
 ### Phase 3: Advanced (v0.3.0)
+
 - [ ] Proxy validation
 - [ ] Speed test
 - [ ] Auto update
@@ -114,4 +123,4 @@
 ---
 
 **Last Updated:** 2026-02-21
-**Version:** 0.0.1
+**Version:** 0.1.0
