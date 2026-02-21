@@ -61,8 +61,12 @@ async function runProxyCommand(args: string[]): Promise<{ success: boolean; outp
     }
     
     return { success: true, output: stdout.trim() }
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Unknown error occurred' }
+  } catch (error: unknown) {
+    let errorMessage = 'Unknown error occurred'
+    if (error instanceof Error) {
+      errorMessage = error.message
+    }
+    return { success: false, error: errorMessage }
   }
 }
 
