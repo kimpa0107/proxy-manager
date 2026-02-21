@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage, Notification } from 'electron'
 import path from 'node:path'
@@ -7,9 +8,23 @@ import fs from 'node:fs'
 
 const execFileAsync = promisify(execFile)
 
+// Single instance lock
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    // Someone tried to run a second instance, focus the existing window
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    }
+  })
+}
+
 // System tray
 let tray: Tray | null = null
-let isQuitting = false
 
 // Network change detection
 let networkMonitorProcess: ReturnType<typeof spawn> | null = null
@@ -109,14 +124,15 @@ function createWindow() {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
   })
 
-  // Hide to tray on close
-  win.on('close', (event) => {
-    if (win && !isQuitting) {
-      event.preventDefault()
-      win.hide()
-      return false
-    }
-  })
+  // Hide to tray on close (commented out - now closes directly)
+  // win.on('close', (event) => {
+  //   if (win && !isQuitting) {
+  //     event.preventDefault()
+  //     win.hide()
+  //     app.dock.hide()
+  //     return false
+  //   }
+  // })
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
@@ -653,7 +669,6 @@ function sendNotification(title: string, body: string) {
 
 // Quit event - set flag to allow window to close
 app.on('before-quit', () => {
-  isQuitting = true
 })
 
 app.on('window-all-closed', () => {
@@ -666,4 +681,12 @@ app.whenReady().then(() => {
   createTray()
   // Start network monitoring by default
   startNetworkMonitoring()
+})
+
+// Handle dock icon click on macOS
+app.on('activate', () => {
+  if (win) {
+    win.show()
+    app.dock.show()
+  }
 })
