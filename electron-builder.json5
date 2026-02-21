@@ -15,7 +15,7 @@
   ],
   "mac": {
     "artifactName": "${productName}_${version}.${ext}",
-    "icon": "public/electron-vite.svg",
+    "icon": "public/rocket-icon.png",
     "target": [
       "dmg"
     ]

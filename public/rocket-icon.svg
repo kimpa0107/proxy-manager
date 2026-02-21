@@ -1,0 +1,42 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#bgGradient)"/>
+  
+  <!-- Rocket Body -->
+  <path d="M64 20C64 20 38 52 38 80C38 95 49 106 64 106C79 106 90 95 90 80C90 52 64 20 64 20Z" fill="url(#rocketBody)"/>
+  
+  <!-- Rocket Window -->
+  <circle cx="64" cy="65" r="10" fill="url(#windowGradient)"/>
+  <circle cx="64" cy="65" r="6" fill="#4FC3F7"/>
+  
+  <!-- Rocket Fins -->
+  <path d="M38 80L28 92L42 88" fill="#FF7043"/>
+  <path d="M90 80L100 92L86 88" fill="#FF7043"/>
+  
+  <!-- Rocket Flames -->
+  <path d="M58 106L54 118L60 114L64 120L68 114L74 118L70 106" fill="url(#flameGradient)"/>
+  
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E3A5F"/>
+      <stop offset="1" stop-color="#4A148C"/>
+    </linearGradient>
+    
+    <linearGradient id="rocketBody" x1="38" y1="20" x2="90" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E0E0E0"/>
+      <stop offset="1" stop-color="#9E9E9E"/>
+    </linearGradient>
+    
+    <radialGradient id="windowGradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(64 65) rotate(90) scale(10)">
+      <stop stop-color="#B3E5FC"/>
+      <stop offset="1" stop-color="#4FC3F7"/>
+    </radialGradient>
+    
+    <linearGradient id="flameGradient" x1="64" y1="106" x2="64" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFEB3B"/>
+      <stop offset="0.5" stop-color="#FF9800"/>
+      <stop offset="1" stop-color="#FF5722"/>
+    </linearGradient>
+  </defs>
+</svg>

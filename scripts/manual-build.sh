@@ -27,7 +27,11 @@ cp -r "${PROJECT_DIR}/dist-electron" "${OUT_DIR}/${APP_NAME}.app/Contents/Resour
 cp -r "${PROJECT_DIR}/public" "${OUT_DIR}/${APP_NAME}.app/Contents/Resources/app/"
 cp "${PROJECT_DIR}/package.json" "${OUT_DIR}/${APP_NAME}.app/Contents/Resources/app/"
 
-# 更新 Info.plist - 设置入口文件
+# 复制火箭图标到 Electron.app 的 Resources 目录
+echo "Copying rocket icon..."
+cp "${PROJECT_DIR}/public/electron-vite.svg" "${OUT_DIR}/${APP_NAME}.app/Contents/Resources/"
+
+# 更新 Info.plist - 设置入口文件和图标
 INFO_PLIST="${OUT_DIR}/${APP_NAME}.app/Contents/Info.plist"
 echo "Updating Info.plist..."
 
@@ -37,6 +41,8 @@ echo "Updating Info.plist..."
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion \"${VERSION}\"" "${INFO_PLIST}"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString \"${VERSION}\"" "${INFO_PLIST}"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier \"com.proxymanager.app\"" "${INFO_PLIST}"
+# 设置图标文件
+/usr/libexec/PlistBuddy -c "Set :CFBundleIconName \"electron-vite\"" "${INFO_PLIST}"
 
 echo "Build complete! Output: ${OUT_DIR}/${APP_NAME}.app"
 echo "You can now create a DMG or copy the app to Applications folder."

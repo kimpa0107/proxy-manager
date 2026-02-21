@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1a1a2e;
+      color: white;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #00d9ff;
+    }
+    .icon-preview {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .icon-box {
+      background: #16213e;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    canvas {
+      border: 2px solid #0f3460;
+      border-radius: 8px;
+      background: #1a1a2e;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .download-section {
+      margin-top: 30px;
+      padding: 20px;
+      background: #16213e;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Rocket Icon Generator</h1>
+    <p>Generate PNG icons for your Proxy Manager app</p>
+    
+    <div class="icon-preview">
+      <div class="icon-box">
+        <h3>512x512 (Main Icon)</h3>
+        <canvas id="canvas512" width="512" height="512"></canvas>
+        <br>
+        <button onclick="downloadIcon('canvas512', 'rocket-icon-512.png')">Download 512x512</button>
+      </div>
+      
+      <div class="icon-box">
+        <h3>256x256</h3>
+        <canvas id="canvas256" width="256" height="256"></canvas>
+        <br>
+        <button onclick="downloadIcon('canvas256', 'rocket-icon-256.png')">Download 256x256</button>
+      </div>
+      
+      <div class="icon-box">
+        <h3>128x128</h3>
+        <canvas id="canvas128" width="128" height="128"></canvas>
+        <br>
+        <button onclick="downloadIcon('canvas128', 'rocket-icon-128.png')">Download 128x128</button>
+      </div>
+      
+      <div class="icon-box">
+        <h3>64x64</h3>
+        <canvas id="canvas64" width="64" height="64"></canvas>
+        <br>
+        <button onclick="downloadIcon('canvas64', 'rocket-icon-64.png')">Download 64x64</button>
+      </div>
+    </div>
+    
+    <div class="download-section">
+      <h3>Download All Sizes</h3>
+      <button onclick="downloadAll()">Download All Icons</button>
+      <p style="margin-top: 15px; color: #888;">After downloading, rename the 512x512 icon to <code style="background: #0f3460; padding: 4px 8px; border-radius: 4px;">rocket-icon.png</code> and update electron-builder.json5</p>
+    </div>
+  </div>
+
+  <script>
+    function drawRocket(canvas) {
+      const ctx = canvas.getContext('2d');
+      const size = canvas.width;
+      const scale = size / 128;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, size, size);
+      
+      // Background gradient circle
+      const bgGradient = ctx.createLinearGradient(0, 0, size, size);
+      bgGradient.addColorStop(0, '#1E3A5F');
+      bgGradient.addColorStop(1, '#4A148C');
+      
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2 - 4 * scale, 0, Math.PI * 2);
+      ctx.fillStyle = bgGradient;
+      ctx.fill();
+      
+      // Rocket body gradient
+      const bodyGradient = ctx.createLinearGradient(
+        size * 0.3, size * 0.15,
+        size * 0.7, size * 0.85
+      );
+      bodyGradient.addColorStop(0, '#E0E0E0');
+      bodyGradient.addColorStop(1, '#9E9E9E');
+      
+      // Rocket body (teardrop shape)
+      ctx.beginPath();
+      ctx.moveTo(size * 0.5, size * 0.15);
+      ctx.bezierCurveTo(
+        size * 0.3, size * 0.35,
+        size * 0.3, size * 0.62,
+        size * 0.3, size * 0.62
+      );
+      ctx.arc(size * 0.5, size * 0.62, size * 0.2, Math.PI, 0);
+      ctx.bezierCurveTo(
+        size * 0.7, size * 0.62,
+        size * 0.7, size * 0.35,
+        size * 0.5, size * 0.15
+      );
+      ctx.fillStyle = bodyGradient;
+      ctx.fill();
+      
+      // Window outer
+      ctx.beginPath();
+      ctx.arc(size * 0.5, size * 0.5, size * 0.08, 0, Math.PI * 2);
+      ctx.fillStyle = '#B3E5FC';
+      ctx.fill();
+      
+      // Window inner
+      ctx.beginPath();
+      ctx.arc(size * 0.5, size * 0.5, size * 0.05, 0, Math.PI * 2);
+      ctx.fillStyle = '#4FC3F7';
+      ctx.fill();
+      
+      // Left fin
+      ctx.beginPath();
+      ctx.moveTo(size * 0.3, size * 0.62);
+      ctx.lineTo(size * 0.22, size * 0.72);
+      ctx.lineTo(size * 0.33, size * 0.68);
+      ctx.fillStyle = '#FF7043';
+      ctx.fill();
+      
+      // Right fin
+      ctx.beginPath();
+      ctx.moveTo(size * 0.7, size * 0.62);
+      ctx.lineTo(size * 0.78, size * 0.72);
+      ctx.lineTo(size * 0.67, size * 0.68);
+      ctx.fillStyle = '#FF7043';
+      ctx.fill();
+      
+      // Flame gradient
+      const flameGradient = ctx.createLinearGradient(
+        size * 0.5, size * 0.82,
+        size * 0.5, size * 0.95
+      );
+      flameGradient.addColorStop(0, '#FFEB3B');
+      flameGradient.addColorStop(0.5, '#FF9800');
+      flameGradient.addColorStop(1, '#FF5722');
+      
+      // Flame
+      ctx.beginPath();
+      ctx.moveTo(size * 0.46, size * 0.82);
+      ctx.lineTo(size * 0.42, size * 0.92);
+      ctx.lineTo(size * 0.47, size * 0.88);
+      ctx.lineTo(size * 0.5, size * 0.94);
+      ctx.lineTo(size * 0.53, size * 0.88);
+      ctx.lineTo(size * 0.58, size * 0.92);
+      ctx.lineTo(size * 0.54, size * 0.82);
+      ctx.fillStyle = flameGradient;
+      ctx.fill();
+    }
+    
+    function downloadIcon(canvasId, filename) {
+      const canvas = document.getElementById(canvasId);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+    
+    function downloadAll() {
+      downloadIcon('canvas512', 'rocket-icon-512.png');
+      setTimeout(() => downloadIcon('canvas256', 'rocket-icon-256.png'), 100);
+      setTimeout(() => downloadIcon('canvas128', 'rocket-icon-128.png'), 200);
+      setTimeout(() => downloadIcon('canvas64', 'rocket-icon-64.png'), 300);
+    }
+    
+    // Draw all icons on page load
+    window.onload = function() {
+      drawRocket(document.getElementById('canvas512'));
+      drawRocket(document.getElementById('canvas256'));
+      drawRocket(document.getElementById('canvas128'));
+      drawRocket(document.getElementById('canvas64'));
+    };
+  </script>
+</body>
+</html>
