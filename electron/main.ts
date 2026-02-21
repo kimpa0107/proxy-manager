@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage, Notification } from 'electron'
 import path from 'node:path'
 import { execFile, spawn } from 'node:child_process'
 import { promisify } from 'node:util'
 import fs from 'node:fs'
 
 const execFileAsync = promisify(execFile)
+
+// System tray
+let tray: Tray | null = null
+let isQuitting = false
 
 // Network change detection
 let networkMonitorProcess: ReturnType<typeof spawn> | null = null
@@ -105,6 +109,15 @@ function createWindow() {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
   })
 
+  // Hide to tray on close
+  win.on('close', (event) => {
+    if (win && !isQuitting) {
+      event.preventDefault()
+      win.hide()
+      return false
+    }
+  })
+
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
   } else {
@@ -143,6 +156,12 @@ ipcMain.handle('proxy:toggle', async (_, host: string, port: string, currentStat
   if (result.success && win) {
     const newStatus = action === 'on' ? 'on' : 'off'
     win.webContents.send('proxy:statusChange', newStatus)
+    
+    // Send notification
+    sendNotification(
+      'Proxy Manager',
+      newStatus === 'on' ? `Proxy enabled (${host}:${port})` : 'Proxy disabled'
+    )
   }
 
   return result
@@ -479,6 +498,30 @@ ipcMain.handle('automation:getLaunchAtLogin', async () => {
   }
 })
 
+// Window management
+ipcMain.handle('window:minimize', () => {
+  if (win) {
+    win.minimize()
+  }
+})
+
+ipcMain.handle('window:hide', () => {
+  if (win) {
+    win.hide()
+  }
+})
+
+ipcMain.handle('window:show', () => {
+  if (win) {
+    win.show()
+    win.focus()
+  }
+})
+
+ipcMain.handle('app:quit', () => {
+  app.quit()
+})
+
 // Rule-based mode (PAC file support)
 const RULES_KEY = 'proxy_rules'
 const RULE_BASED_MODE_KEY = 'proxy_rule_based_mode_enabled'
@@ -559,6 +602,60 @@ ${pacRules}
   }
 })
 
+// Create system tray
+function createTray() {
+  // Create tray icon from template (macOS) or fallback to image
+  const trayIcon = nativeImage.createFromPath(path.join(process.env.PUBLIC, 'electron-vite.svg'))
+  const icon = trayIcon.isEmpty() ? nativeImage.createEmpty() : trayIcon.resize({ width: 16, height: 16 })
+  
+  tray = new Tray(icon)
+  
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Toggle Proxy',
+      click: () => {
+        if (win) {
+          win.show()
+          win.focus()
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        app.quit()
+      }
+    }
+  ])
+  
+  tray.setToolTip('Proxy Manager')
+  tray.setContextMenu(contextMenu)
+  
+  // Handle tray click
+  tray.on('click', () => {
+    if (win) {
+      if (win.isVisible()) {
+        win.focus()
+      } else {
+        win.show()
+      }
+    }
+  })
+}
+
+// Send notification
+function sendNotification(title: string, body: string) {
+  if (Notification.isSupported()) {
+    new Notification({ title, body }).show()
+  }
+}
+
+// Quit event - set flag to allow window to close
+app.on('before-quit', () => {
+  isQuitting = true
+})
+
 app.on('window-all-closed', () => {
   stopNetworkMonitoring()
   win = null
@@ -566,6 +663,7 @@ app.on('window-all-closed', () => {
 
 app.whenReady().then(() => {
   createWindow()
+  createTray()
   // Start network monitoring by default
   startNetworkMonitoring()
 })

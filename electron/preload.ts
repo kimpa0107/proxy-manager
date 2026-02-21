@@ -140,6 +140,14 @@ contextBridge.exposeInMainWorld('automationAPI', {
   },
 })
 
+// Window management APIs
+contextBridge.exposeInMainWorld('windowAPI', {
+  minimize: () => ipcRenderer.invoke('window:minimize'),
+  hide: () => ipcRenderer.invoke('window:hide'),
+  show: () => ipcRenderer.invoke('window:show'),
+  quit: () => ipcRenderer.invoke('app:quit'),
+})
+
 // Rule-based mode APIs
 contextBridge.exposeInMainWorld('rulesAPI', {
   getAll: () => ipcRenderer.invoke('rules:getAll'),

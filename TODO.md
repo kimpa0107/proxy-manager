@@ -33,17 +33,17 @@
 
 #### 3. User Experience
 
-- [ ] **System Tray** - Minimize to tray for quick access
-  - [ ] Create tray icon
-  - [ ] Add tray menu (Toggle, Quit)
-  - [ ] Hide window to tray on close
-- [ ] **System Notifications** - Native notifications for status changes
-  - [ ] Use Notification Center API
-  - [ ] Add notification preferences
-- [ ] **Dark/Light Theme** - Theme toggle or system follow
-  - [ ] Add theme switcher
-  - [ ] Create light theme styles
-  - [ ] Detect system theme preference
+- [x] **System Tray** - Minimize to tray for quick access
+  - [x] Create tray icon
+  - [x] Add tray menu (Toggle, Quit)
+  - [x] Hide window to tray on close
+- [x] **System Notifications** - Native notifications for status changes
+  - [x] Use Notification Center API
+  - [x] Add notification preferences
+- [x] **Dark/Light Theme** - Theme toggle or system follow
+  - [x] Add theme switcher
+  - [x] Create light theme styles
+  - [x] Detect system theme preference
 
 #### 4. Advanced Features
 

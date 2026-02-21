@@ -6,12 +6,20 @@
   * {
     @apply border-gray-800;
   }
-  
+
   html, body {
     @apply bg-gray-900 text-gray-100;
     overflow: hidden;
   }
-  
+
+  html[data-theme='light'], html[data-theme='light'] body {
+    @apply bg-gray-50 text-gray-900;
+  }
+
+  html[data-theme='light'] * {
+    @apply border-gray-200;
+  }
+
   body {
     font-feature-settings: "cv11", "ss01";
     font-optical-sizing: auto;
@@ -41,4 +49,11 @@ input:-webkit-autofill:focus {
   -webkit-text-fill-color: #e5e7eb;
   -webkit-box-shadow: 0 0 0px 1000px #1f2937 inset;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+html[data-theme='light'] input:-webkit-autofill,
+html[data-theme='light'] input:-webkit-autofill:hover,
+html[data-theme='light'] input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #1f2937;
+  -webkit-box-shadow: 0 0 0px 1000px #f9fafb inset;
 }

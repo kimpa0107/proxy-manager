@@ -77,11 +77,19 @@ export interface RulesAPI {
   generatePAC: (rules: string[], proxyHost: string, proxyPort: string) => Promise<{ success: boolean; pacPath?: string; error?: string }>;
 }
 
+export interface WindowManagementAPI {
+  minimize: () => Promise<void>;
+  hide: () => Promise<void>;
+  show: () => Promise<void>;
+  quit: () => Promise<void>;
+}
+
 declare global {
   interface Window {
     proxyAPI: ProxyAPI;
     profileAPI: ProfileManagerAPI;
     automationAPI: AutomationAPI;
     rulesAPI: RulesAPI;
+    windowAPI: WindowManagementAPI;
   }
 }

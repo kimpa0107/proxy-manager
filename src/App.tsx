@@ -180,6 +180,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
     </svg>
   ),
+  Theme: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  ),
 };
 
 // Tooltip Component
@@ -917,15 +922,19 @@ const SettingsModal: React.FC<{
   onToggleNetworkMonitoring: (enabled: boolean) => void;
   ruleBasedModeEnabled: boolean;
   onToggleRuleBasedMode: (enabled: boolean) => void;
-}> = ({ 
-  isOpen, 
-  onClose, 
-  launchAtLogin, 
+  theme: 'dark' | 'light' | 'system';
+  onThemeChange: (theme: 'dark' | 'light' | 'system') => void;
+}> = ({
+  isOpen,
+  onClose,
+  launchAtLogin,
   onToggleLaunchAtLogin,
   networkMonitoringEnabled,
   onToggleNetworkMonitoring,
   ruleBasedModeEnabled,
-  onToggleRuleBasedMode
+  onToggleRuleBasedMode,
+  theme,
+  onThemeChange
 }) => {
   if (!isOpen) return null;
 
@@ -949,6 +958,51 @@ const SettingsModal: React.FC<{
         </div>
 
         <div className='space-y-3'>
+          {/* Theme Selection */}
+          <div className='p-3 rounded-xl bg-gray-800/50 border border-gray-700/50'>
+            <div className='flex items-center gap-2 mb-3'>
+              <span className='text-amber-400'>
+                <Icons.Theme />
+              </span>
+              <div>
+                <p className='text-xs font-medium text-gray-200'>Theme</p>
+                <p className='text-[10px] text-gray-500'>Choose your preferred appearance</p>
+              </div>
+            </div>
+            <div className='flex gap-2'>
+              <button
+                onClick={() => onThemeChange('dark')}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
+                  theme === 'dark'
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Dark
+              </button>
+              <button
+                onClick={() => onThemeChange('light')}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
+                  theme === 'light'
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Light
+              </button>
+              <button
+                onClick={() => onThemeChange('system')}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
+                  theme === 'system'
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                System
+              </button>
+            </div>
+          </div>
+
           {/* Launch at Login */}
           <div className='flex items-center justify-between p-3 rounded-xl bg-gray-800/50 border border-gray-700/50'>
             <div className='flex items-center gap-2'>
@@ -1066,6 +1120,9 @@ export default function App() {
   const [showRuleEditor, setShowRuleEditor] = useState(false);
   const [rules, setRules] = useState<string[]>([]);
 
+  // Theme state
+  const [theme, setTheme] = useState<'dark' | 'light' | 'system'>('dark');
+
   // Ref for file input
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1113,6 +1170,21 @@ export default function App() {
   }, [proxyStatus, activeProfile]);
 
   useEffect(() => {
+    // Load theme
+    const savedTheme = localStorage.getItem('proxy_manager_theme') as 'dark' | 'light' | 'system' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      if (savedTheme === 'system') {
+        const systemPref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', systemPref);
+      } else {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    } else {
+      // Default to dark theme
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+
     // Load profiles
     loadProfiles();
     loadHistory();
@@ -1155,6 +1227,16 @@ export default function App() {
       setProxyStatus(status as 'on' | 'off');
     });
 
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+    const handleSystemThemeChange = () => {
+      if (theme === 'system') {
+        const systemPref = mediaQuery.matches ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', systemPref);
+      }
+    };
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+
     // Listen for network changes
     window.automationAPI.onNetworkChange((data) => {
       console.log('Network change detected:', data);
@@ -1165,7 +1247,7 @@ export default function App() {
         setPort(data.port);
         setHttpEnabled(data.httpEnabled);
         setSocksEnabled(data.socksEnabled);
-        
+
         // Turn on proxy if it's off
         if (proxyStatus === 'off' && data.host && data.port) {
           handleToggleProxy(data.host, data.port, data.httpEnabled, data.socksEnabled);
@@ -1175,10 +1257,11 @@ export default function App() {
     });
 
     return () => {
+      mediaQuery.removeEventListener('change', handleSystemThemeChange);
       window.proxyAPI.removeProxyStatusChangeListener();
       window.automationAPI.removeNetworkChangeListener();
     };
-  }, [networkMonitoringEnabled, activeProfile, proxyStatus, handleToggleProxy]);
+  }, [networkMonitoringEnabled, activeProfile, proxyStatus, handleToggleProxy, theme]);
 
   const loadProfiles = async () => {
     try {
@@ -1281,6 +1364,21 @@ export default function App() {
     } catch (error) {
       showMessage('error', 'Failed to update network monitoring');
     }
+  };
+
+  const handleThemeChange = (newTheme: 'dark' | 'light' | 'system') => {
+    setTheme(newTheme);
+    localStorage.setItem('proxy_manager_theme', newTheme);
+    
+    // Apply theme
+    if (newTheme === 'system') {
+      const systemPref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', systemPref);
+    } else {
+      document.documentElement.setAttribute('data-theme', newTheme);
+    }
+    
+    showMessage('success', `${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} theme applied`);
   };
 
   const loadRules = async () => {
@@ -1583,6 +1681,8 @@ export default function App() {
         onToggleNetworkMonitoring={handleToggleNetworkMonitoring}
         ruleBasedModeEnabled={ruleBasedModeEnabled}
         onToggleRuleBasedMode={handleToggleRuleBasedMode}
+        theme={theme}
+        onThemeChange={handleThemeChange}
       />
 
       {/* Rule Editor Modal */}
